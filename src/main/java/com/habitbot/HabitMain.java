@@ -1,39 +1,74 @@
+package com.habitbot;
+
 import java.util.ArrayList;
 import java.util.Scanner;
 
+/**
+ * Класс Habit описывает отдельную привычку пользователя,
+ * хранит её название, целевое и текущее количество выполнений
+ */
 class Habit {
     private String title;
     private int targetCount;
     private int currentCount;
 
+    /**
+     * Создает новую привычку с заданным названием и целью на день
+     * newTitle название привычки
+     * newTargetCount целевое количество выполнений в день
+     */
     public Habit(String newTitle, int newTargetCount) {
         title = newTitle;
         targetCount = newTargetCount;
         currentCount = 0;
     }
 
+    /**
+     * Возвращает название привычки
+     */
     public String getTitle() {
         return title;
     }
 
+    /**
+     * Возвращает целевое количество выполнений привычки в день
+     */
     public int getTargetCount() {
         return targetCount;
     }
 
+    /**
+     * Возвращает текущий прогресс выполнения привычки за сегодня
+     */
     public int getCurrentCount() {
         return currentCount;
     }
 
+    /**
+     * Увеличивает текущий прогресс выполнения привычки на единицу
+     */
     public void increaseCount() {
         currentCount++;
     }
 
+    /**
+     * Проверяет, достигнута ли дневная цель по привычке
+     * true, если цель выполнена или перевыполнена, иначе false
+     */
     public boolean isCompleted() {
         return currentCount >= targetCount;
     }
 }
 
+/**
+ * Главный класс HabitMain управляет консольным интерфейсом трекера привычек
+ * обрабатывает команды пользователя и хранит список привычек
+ */
 public class HabitMain {
+
+    /**
+     * Точка входа в приложение, запускает цикл обработки команд
+     */
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         ArrayList<Habit> habits = new ArrayList<>();
