@@ -1,7 +1,9 @@
 package com.habitbot;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 /**
  * Класс Habit описывает отдельную привычку пользователя,
@@ -11,6 +13,8 @@ class Habit {
     private String title;
     private int targetCount;
     private int currentCount;
+    private String category;
+    private boolean skipped;
 
     /**
      * Создает новую привычку с заданным названием и целью на день
@@ -18,9 +22,23 @@ class Habit {
      * newTargetCount целевое количество выполнений в день
      */
     public Habit(String newTitle, int newTargetCount) {
+        this(newTitle, newTargetCount, "Без категории");
+    }
+
+    /**
+     * Создает новую привычку с заданным названием, целью на день и категорией
+     * Если категория пустая, привычке назначается категория "Без категории"
+     */
+    public Habit(String newTitle, int newTargetCount, String newCategory) {
         title = newTitle;
         targetCount = newTargetCount;
         currentCount = 0;
+        skipped = false;
+        if (newCategory == null || newCategory.trim().isEmpty()) {
+            category = "Без категории";
+        } else {
+            category = newCategory.trim();
+        }
     }
 
     /**
@@ -45,10 +63,33 @@ class Habit {
     }
 
     /**
+     * Возвращает категорию привычки
+     */
+    public String getCategory() {
+        return category;
+    }
+
+    /**
+     * Проверяет, отмечена ли привычка как пропущенная на сегодня
+     */
+    public boolean isSkipped() {
+        return skipped;
+    }
+
+    /**
      * Увеличивает текущий прогресс выполнения привычки на единицу
+     * Если привычка была отмечена как пропущенная, отметка снимается
      */
     public void increaseCount() {
         currentCount++;
+        skipped = false;
+    }
+
+    /**
+     * Отмечает привычку как пропущенную на сегодня
+     */
+    public void skip() {
+        skipped = true;
     }
 
     /**
@@ -57,6 +98,22 @@ class Habit {
      */
     public boolean isCompleted() {
         return currentCount >= targetCount;
+    }
+
+    /**
+     * Возвращает текстовый статус привычки на сегодня:
+     * выполнено, пропущено, в процессе или не начато
+     */
+    public String getStatus() {
+        if (isCompleted()) {
+            return "✅ выполнено";
+        } else if (skipped) {
+            return "❌ пропущено";
+        } else if (currentCount > 0) {
+            return "⏳ в процессе";
+        } else {
+            return "⬜ не начато";
+        }
     }
 }
 
@@ -74,7 +131,7 @@ public class HabitMain {
         ArrayList<Habit> habits = new ArrayList<>();
 
         System.out.println("Бот-трекер привычек запущен.");
-        System.out.println("Доступные команды: /add, /list, /done, /stats, /delete, /exit");
+        System.out.println("Доступные команды: /add, /list, /done, /skip, /today, /category, /stats, /delete, /exit");
 
         while (true) {
             System.out.print("\nВведите команду > ");
@@ -93,8 +150,9 @@ public class HabitMain {
                         System.out.println("--- Ваши привычки ---");
                         for (int i = 0; i < habits.size(); i++) {
                             Habit h = habits.get(i);
-                            System.out.println((i + 1) + ". " + h.getTitle() + 
-                                    " [" + h.getCurrentCount() + "/" + h.getTargetCount() + "]");
+                            System.out.println((i + 1) + ". " + h.getTitle() +
+                                    " [" + h.getCurrentCount() + "/" + h.getTargetCount() + "]" +
+                                    " (" + h.getCategory() + ")");
                         }
                     }
                     break;
@@ -107,7 +165,10 @@ public class HabitMain {
                     int count = scanner.nextInt();
                     scanner.nextLine();
 
-                    habits.add(new Habit(title, count));
+                    System.out.print("Введите категорию (Enter - без категории): ");
+                    String category = scanner.nextLine().trim();
+
+                    habits.add(new Habit(title, count, category));
                     System.out.println("Привычка '" + title + "' сохранена.");
                     break;
 
@@ -131,7 +192,7 @@ public class HabitMain {
                         Habit selected = habits.get(doneIndex - 1);
                         selected.increaseCount();
 
-                        System.out.println("Отметка добавлена: " + selected.getTitle() + 
+                        System.out.println("Отметка добавлена: " + selected.getTitle() +
                                 " (" + selected.getCurrentCount() + "/" + selected.getTargetCount() + ")");
 
                         if (selected.isCompleted()) {
@@ -139,6 +200,85 @@ public class HabitMain {
                         }
                     } else {
                         System.out.println("Ошибка: неверный номер.");
+                    }
+                    break;
+
+                case "/skip":
+                    if (habits.isEmpty()) {
+                        System.out.println("Список пуст.");
+                        break;
+                    }
+
+                    System.out.println("Какую привычку пропустить сегодня?");
+                    for (int i = 0; i < habits.size(); i++) {
+                        Habit h = habits.get(i);
+                        System.out.println((i + 1) + ". " + h.getTitle() + " " + h.getStatus());
+                    }
+
+                    System.out.print("Введите номер > ");
+                    int skipIndex = scanner.nextInt();
+                    scanner.nextLine();
+
+                    if (skipIndex >= 1 && skipIndex <= habits.size()) {
+                        Habit toSkip = habits.get(skipIndex - 1);
+
+                        if (toSkip.isCompleted()) {
+                            System.out.println("Привычка '" + toSkip.getTitle() + "' уже выполнена, пропускать нечего.");
+                        } else {
+                            toSkip.skip();
+                            System.out.println("Привычка '" + toSkip.getTitle() + "' отмечена как пропущенная ❌");
+                        }
+                    } else {
+                        System.out.println("Ошибка: неверный номер.");
+                    }
+                    break;
+
+                case "/today":
+                    if (habits.isEmpty()) {
+                        System.out.println("Список пуст. Добавьте привычку через /add");
+                        break;
+                    }
+
+                    System.out.println("--- План на сегодня ---");
+                    int todayDone = 0;
+                    for (int i = 0; i < habits.size(); i++) {
+                        Habit h = habits.get(i);
+                        System.out.println((i + 1) + ". " + h.getTitle() +
+                                " [" + h.getCurrentCount() + "/" + h.getTargetCount() + "] " + h.getStatus());
+                        if (h.isCompleted()) {
+                            todayDone++;
+                        }
+                    }
+                    System.out.println("Выполнено: " + todayDone + " из " + habits.size());
+                    break;
+
+                case "/category":
+                    if (habits.isEmpty()) {
+                        System.out.println("Список пуст. Добавьте привычку через /add");
+                        break;
+                    }
+
+                    Set<String> categories = new LinkedHashSet<>();
+                    for (int i = 0; i < habits.size(); i++) {
+                        categories.add(habits.get(i).getCategory());
+                    }
+                    System.out.println("Доступные категории: " + String.join(", ", categories));
+
+                    System.out.print("Введите категорию > ");
+                    String filter = scanner.nextLine().trim();
+
+                    System.out.println("--- Категория: " + filter + " ---");
+                    boolean found = false;
+                    for (int i = 0; i < habits.size(); i++) {
+                        Habit h = habits.get(i);
+                        if (h.getCategory().equalsIgnoreCase(filter)) {
+                            System.out.println((i + 1) + ". " + h.getTitle() +
+                                    " [" + h.getCurrentCount() + "/" + h.getTargetCount() + "] " + h.getStatus());
+                            found = true;
+                        }
+                    }
+                    if (!found) {
+                        System.out.println("В этой категории привычек нет.");
                     }
                     break;
 
@@ -190,11 +330,10 @@ public class HabitMain {
                     break;
 
                 default:
-                    System.out.println("Неизвестная команда. Доступно: /add, /list, /done, /stats, /delete, /exit");
+                    System.out.println("Неизвестная команда. Доступно: /add, /list, /done, /skip, /today, /category, /stats, /delete, /exit");
                     break;
             }
         }
 
         scanner.close();
     }
-}
