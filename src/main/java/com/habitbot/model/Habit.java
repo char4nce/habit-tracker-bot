@@ -1,4 +1,4 @@
-package com.habitbot;
+package com.habitbot.model;
 
 /**
  * Класс Habit описывает отдельную привычку пользователя,
@@ -8,20 +8,13 @@ public class Habit {
     private String title;
     private int targetCount;
     private int currentCount;
-    private int category; // или String category (оставляем String ниже)
     private String categoryName;
     private boolean skipped;
 
-    /**
-     * Создает новую привычку с заданным названием и целью на день
-     */
     public Habit(String newTitle, int newTargetCount) {
         this(newTitle, newTargetCount, "Без категории");
     }
 
-    /**
-     * Создает новую привычку с заданным названием, целью на день и категорией
-     */
     public Habit(String newTitle, int newTargetCount, String newCategory) {
         title = newTitle;
         targetCount = newTargetCount;
