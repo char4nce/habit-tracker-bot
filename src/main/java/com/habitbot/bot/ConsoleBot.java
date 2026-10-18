@@ -1,22 +1,22 @@
-package com.habitbot;
+package com.habitbot.bot;
 
-import java.util.ArrayList;
+import com.habitbot.model.Habit;
+import com.habitbot.repository.HabitRepository;
+
 import java.util.LinkedHashSet;
 import java.util.Scanner;
 import java.util.Set;
 
-/**
- * Главный класс HabitMain управляет консольным интерфейсом трекера привычек
- * обрабатывает команды пользователя и хранит список привычек
- */
-public class HabitMain {
+public class ConsoleBot implements Bot {
+    private final HabitRepository habitRepository;
 
-    /**
-     * Точка входа в приложение, запускает цикл обработки команд
-     */
-    public static void main(String[] args) {
+    public ConsoleBot(HabitRepository habitRepository) {
+        this.habitRepository = habitRepository;
+    }
+
+    @Override
+    public void run() {
         Scanner scanner = new Scanner(System.in);
-        ArrayList<Habit> habits = new ArrayList<>();
 
         System.out.println("Бот-трекер привычек запущен.");
         System.out.println("Доступные команды: /add, /list, /done, /skip, /today, /category, /stats, /delete, /exit");
@@ -32,12 +32,12 @@ public class HabitMain {
 
             switch (command.toLowerCase()) {
                 case "/list":
-                    if (habits.isEmpty()) {
+                    if (habitRepository.isEmpty()) {
                         System.out.println("Список пуст. Добавьте привычку через /add");
                     } else {
                         System.out.println("--- Ваши привычки ---");
-                        for (int i = 0; i < habits.size(); i++) {
-                            Habit h = habits.get(i);
+                        for (int i = 0; i < habitRepository.size(); i++) {
+                            Habit h = habitRepository.getHabit(i);
                             System.out.println((i + 1) + ". " + h.getTitle() +
                                     " [" + h.getCurrentCount() + "/" + h.getTargetCount() + "]" +
                                     " (" + h.getCategory() + ")");
@@ -56,19 +56,19 @@ public class HabitMain {
                     System.out.print("Введите категорию (Enter - без категории): ");
                     String category = scanner.nextLine().trim();
 
-                    habits.add(new Habit(title, count, category));
+                    habitRepository.addHabit(new Habit(title, count, category));
                     System.out.println("Привычка '" + title + "' сохранена.");
                     break;
 
                 case "/done":
-                    if (habits.isEmpty()) {
+                    if (habitRepository.isEmpty()) {
                         System.out.println("Список пуст.");
                         break;
                     }
 
                     System.out.println("Какую привычку отметить?");
-                    for (int i = 0; i < habits.size(); i++) {
-                        Habit h = habits.get(i);
+                    for (int i = 0; i < habitRepository.size(); i++) {
+                        Habit h = habitRepository.getHabit(i);
                         System.out.println((i + 1) + ". " + h.getTitle());
                     }
 
@@ -76,8 +76,8 @@ public class HabitMain {
                     int doneIndex = scanner.nextInt();
                     scanner.nextLine();
 
-                    if (doneIndex >= 1 && doneIndex <= habits.size()) {
-                        Habit selected = habits.get(doneIndex - 1);
+                    if (doneIndex >= 1 && doneIndex <= habitRepository.size()) {
+                        Habit selected = habitRepository.getHabit(doneIndex - 1);
                         selected.increaseCount();
 
                         System.out.println("Отметка добавлена: " + selected.getTitle() +
@@ -92,14 +92,14 @@ public class HabitMain {
                     break;
 
                 case "/skip":
-                    if (habits.isEmpty()) {
+                    if (habitRepository.isEmpty()) {
                         System.out.println("Список пуст.");
                         break;
                     }
 
                     System.out.println("Какую привычку пропустить сегодня?");
-                    for (int i = 0; i < habits.size(); i++) {
-                        Habit h = habits.get(i);
+                    for (int i = 0; i < habitRepository.size(); i++) {
+                        Habit h = habitRepository.getHabit(i);
                         System.out.println((i + 1) + ". " + h.getTitle() + " " + h.getStatus());
                     }
 
@@ -107,8 +107,8 @@ public class HabitMain {
                     int skipIndex = scanner.nextInt();
                     scanner.nextLine();
 
-                    if (skipIndex >= 1 && skipIndex <= habits.size()) {
-                        Habit toSkip = habits.get(skipIndex - 1);
+                    if (skipIndex >= 1 && skipIndex <= habitRepository.size()) {
+                        Habit toSkip = habitRepository.getHabit(skipIndex - 1);
 
                         if (toSkip.isCompleted()) {
                             System.out.println("Привычка '" + toSkip.getTitle() + "' уже выполнена, пропускать нечего.");
@@ -122,33 +122,33 @@ public class HabitMain {
                     break;
 
                 case "/today":
-                    if (habits.isEmpty()) {
+                    if (habitRepository.isEmpty()) {
                         System.out.println("Список пуст. Добавьте привычку через /add");
                         break;
                     }
 
                     System.out.println("--- План на сегодня ---");
                     int todayDone = 0;
-                    for (int i = 0; i < habits.size(); i++) {
-                        Habit h = habits.get(i);
+                    for (int i = 0; i < habitRepository.size(); i++) {
+                        Habit h = habitRepository.getHabit(i);
                         System.out.println((i + 1) + ". " + h.getTitle() +
                                 " [" + h.getCurrentCount() + "/" + h.getTargetCount() + "] " + h.getStatus());
                         if (h.isCompleted()) {
                             todayDone++;
                         }
                     }
-                    System.out.println("Выполнено: " + todayDone + " из " + habits.size());
+                    System.out.println("Выполнено: " + todayDone + " из " + habitRepository.size());
                     break;
 
                 case "/category":
-                    if (habits.isEmpty()) {
+                    if (habitRepository.isEmpty()) {
                         System.out.println("Список пуст. Добавьте привычку через /add");
                         break;
                     }
 
                     Set<String> categories = new LinkedHashSet<>();
-                    for (int i = 0; i < habits.size(); i++) {
-                        categories.add(habits.get(i).getCategory());
+                    for (int i = 0; i < habitRepository.size(); i++) {
+                        categories.add(habitRepository.getHabit(i).getCategory());
                     }
                     System.out.println("Доступные категории: " + String.join(", ", categories));
 
@@ -157,8 +157,8 @@ public class HabitMain {
 
                     System.out.println("--- Категория: " + filter + " ---");
                     boolean found = false;
-                    for (int i = 0; i < habits.size(); i++) {
-                        Habit h = habits.get(i);
+                    for (int i = 0; i < habitRepository.size(); i++) {
+                        Habit h = habitRepository.getHabit(i);
                         if (h.getCategory().equalsIgnoreCase(filter)) {
                             System.out.println((i + 1) + ". " + h.getTitle() +
                                     " [" + h.getCurrentCount() + "/" + h.getTargetCount() + "] " + h.getStatus());
@@ -171,15 +171,15 @@ public class HabitMain {
                     break;
 
                 case "/stats":
-                    if (habits.isEmpty()) {
+                    if (habitRepository.isEmpty()) {
                         System.out.println("Список пуст. Нет данных для статистики.");
                         break;
                     }
 
-                    int totalHabits = habits.size();
+                    int totalHabits = habitRepository.size();
                     int completedHabits = 0;
-                    for (int i = 0; i < habits.size(); i++) {
-                        Habit h = habits.get(i);
+                    for (int i = 0; i < habitRepository.size(); i++) {
+                        Habit h = habitRepository.getHabit(i);
                         if (h.isCompleted()) {
                             completedHabits++;
                         }
@@ -194,14 +194,14 @@ public class HabitMain {
                     break;
 
                 case "/delete":
-                    if (habits.isEmpty()) {
+                    if (habitRepository.isEmpty()) {
                         System.out.println("Список пуст. Нечего удалять.");
                         break;
                     }
 
                     System.out.println("Какую привычку удалить?");
-                    for (int i = 0; i < habits.size(); i++) {
-                        Habit h = habits.get(i);
+                    for (int i = 0; i < habitRepository.size(); i++) {
+                        Habit h = habitRepository.getHabit(i);
                         System.out.println((i + 1) + ". " + h.getTitle());
                     }
 
@@ -209,8 +209,9 @@ public class HabitMain {
                     int deleteIndex = scanner.nextInt();
                     scanner.nextLine();
 
-                    if (deleteIndex >= 1 && deleteIndex <= habits.size()) {
-                        Habit removed = habits.remove(deleteIndex - 1);
+                    if (deleteIndex >= 1 && deleteIndex <= habitRepository.size()) {
+                        Habit removed = habitRepository.getHabit(deleteIndex - 1);
+                        habitRepository.removeHabit(deleteIndex - 1);
                         System.out.println("Привычка '" + removed.getTitle() + "' удалена.");
                     } else {
                         System.out.println("Ошибка: неверный номер.");
