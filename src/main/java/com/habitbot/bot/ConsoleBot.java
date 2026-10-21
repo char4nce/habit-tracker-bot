@@ -56,7 +56,12 @@ public class ConsoleBot implements Bot {
                     System.out.print("Введите категорию (Enter - без категории): ");
                     String category = scanner.nextLine().trim();
 
-                    habitRepository.addHabit(new Habit(title, count, category));
+                    System.out.print("Во сколько напомнить? (в формате ЧЧ:ММ или Enter чтобы пропустить): ");
+                    String time = scanner.nextLine().trim();
+                    Habit newHabit = new Habit(title, count, category);
+                    newHabit.setReminderTime(time);
+
+                    habitRepository.addHabit(newHabit);
                     System.out.println("Привычка '" + title + "' сохранена.");
                     break;
 
