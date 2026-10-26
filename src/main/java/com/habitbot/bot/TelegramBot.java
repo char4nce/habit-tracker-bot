@@ -19,8 +19,13 @@ public class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot
     private final TelegramClient client;
     private final Map<Long, HabitCommandHandler> handlers = new ConcurrentHashMap<>();
  
-    public TelegramBot(String token) {
-        this.token = token;
+    public TelegramBot() {
+        // Токен берём здесь, внутри Telegram-реализации: другим классам он не нужен
+        this.token = System.getenv("BOT_TOKEN");
+        if (token == null || token.isBlank()) {
+            throw new IllegalStateException(
+                    "Не задан токен Telegram-бота: установите переменную BOT_TOKEN");
+        }
         this.client = new OkHttpTelegramClient(token);
     }
  
