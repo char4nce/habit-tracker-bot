@@ -11,11 +11,11 @@ public class Main {
         String token = System.getenv("BOT_TOKEN");
 
         Bot bot;
-        HabitRepository repository = new InMemoryHabitRepository();
 
         if (token != null && !token.isBlank()) {
-            bot = new TelegramBot(token, repository);
+            bot = new TelegramBot(token);
         } else {
+            HabitRepository repository = new InMemoryHabitRepository();
             bot = new ConsoleBot(repository);
         }
         bot.run();
