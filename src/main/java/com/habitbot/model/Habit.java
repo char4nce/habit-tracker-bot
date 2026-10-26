@@ -71,4 +71,14 @@ public class Habit {
             return "⬜ не начато";
         }
     }
+
+    private String reminderTime = "";
+
+    public String getReminderTime() {
+        return reminderTime;
+    }
+    
+    public void setReminderTime(String reminderTime) {
+        this.reminderTime = reminderTime;
+    }
 }
