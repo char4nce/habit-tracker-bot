@@ -1,7 +1,8 @@
 package com.habitbot.bot;
 
-import com.habitbot.repository.InMemoryHabitRepository;
+import com.habitbot.repository.HabitRepository;
 import com.habitbot.service.HabitCommandHandler;
+import com.habitbot.service.HabitReminder;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.longpolling.util.DefaultLongPollingUpdateConsumer;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
@@ -13,20 +14,21 @@ import org.telegram.telegrambots.meta.generics.TelegramClient;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Telegram-версия бота. Получает сообщения через long polling
- * (бот сам спрашивает у Telegram, есть ли новые сообщения, сервер не нужен).
- * У каждого чата свой список привычек и своё состояние диалога.
- */
 public class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot {
 
     private final String token;
     private final TelegramClient client;
+    private final HabitRepository sharedRepository;
+    private final HabitReminder reminder;
     private final Map<Long, HabitCommandHandler> handlers = new ConcurrentHashMap<>();
 
-    public TelegramBot(String token) {
+    public TelegramBot(String token, HabitRepository sharedRepository) {
         this.token = token;
         this.client = new OkHttpTelegramClient(token);
+        this.sharedRepository = sharedRepository;
+        
+        this.reminder = new HabitReminder(sharedRepository);
+        this.reminder.start();
     }
 
     @Override
@@ -53,7 +55,7 @@ public class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot
         String text = update.getMessage().getText();
 
         HabitCommandHandler handler = handlers.computeIfAbsent(
-                chatId, id -> new HabitCommandHandler(new InMemoryHabitRepository()));
+                chatId, id -> new HabitCommandHandler(sharedRepository)); 
         String reply = handler.handle(text);
 
         try {

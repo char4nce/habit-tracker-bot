@@ -2,6 +2,7 @@ package com.habitbot.bot;
 
 import com.habitbot.model.Habit;
 import com.habitbot.repository.HabitRepository;
+import com.habitbot.service.HabitReminder; 
 
 import java.util.LinkedHashSet;
 import java.util.Scanner;
@@ -9,9 +10,14 @@ import java.util.Set;
 
 public class ConsoleBot implements Bot {
     private final HabitRepository habitRepository;
+    private final HabitReminder reminder; 
 
     public ConsoleBot(HabitRepository habitRepository) {
         this.habitRepository = habitRepository;
+        
+        // Напоминалки теперь запускаются внутри бота
+        this.reminder = new HabitReminder(habitRepository);
+        this.reminder.start();
     }
 
     @Override
