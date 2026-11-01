@@ -1,30 +1,74 @@
 package com.habitbot.model;
 
+import jakarta.persistence.*;
+
 /**
  * Класс Habit описывает отдельную привычку пользователя,
  * хранит её название, целевое и текущее количество выполнений
  */
+@Entity
+@Table(name = "habits")
 public class Habit {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "chat_id", nullable = false)
+    private Long chatId;
+
+    @Column(nullable = false)
     private String title;
+
+    @Column(name = "target_count")
     private int targetCount;
+
+    @Column(name = "current_count")
     private int currentCount;
+
+    @Column(name = "category_name")
     private String categoryName;
+
     private boolean skipped;
 
+    @Column(name = "reminder_time")
+    private String reminderTime = "";
+
+    // Пустой конструктор для Hibernate
+    protected Habit() {
+    }
+
     public Habit(String newTitle, int newTargetCount) {
-        this(newTitle, newTargetCount, "Без категории");
+        this(0L, newTitle, newTargetCount, "Без категории");
     }
 
     public Habit(String newTitle, int newTargetCount, String newCategory) {
-        title = newTitle;
-        targetCount = newTargetCount;
-        currentCount = 0;
-        skipped = false;
+        this(0L, newTitle, newTargetCount, newCategory);
+    }
+
+    public Habit(Long chatId, String newTitle, int newTargetCount, String newCategory) {
+        this.chatId = chatId;
+        this.title = newTitle;
+        this.targetCount = newTargetCount;
+        this.currentCount = 0;
+        this.skipped = false;
         if (newCategory == null || newCategory.trim().isEmpty()) {
-            categoryName = "Без категории";
+            this.categoryName = "Без категории";
         } else {
-            categoryName = newCategory.trim();
+            this.categoryName = newCategory.trim();
         }
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getChatId() {
+        return chatId;
+    }
+
+    public void setChatId(Long chatId) {
+        this.chatId = chatId;
     }
 
     public String getTitle() {
@@ -72,12 +116,10 @@ public class Habit {
         }
     }
 
-    private String reminderTime = "";
-
     public String getReminderTime() {
         return reminderTime;
     }
-    
+
     public void setReminderTime(String reminderTime) {
         this.reminderTime = reminderTime;
     }

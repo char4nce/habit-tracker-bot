@@ -1,7 +1,8 @@
 package com.habitbot.bot;
- 
-import com.habitbot.repository.InMemoryHabitRepository;
+
+import com.habitbot.repository.PostgresHabitRepository;
 import com.habitbot.service.HabitCommandHandler;
+import org.hibernate.SessionFactory;
 import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication;
 import org.telegram.telegrambots.longpolling.util.DefaultLongPollingUpdateConsumer;
 import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient;
@@ -9,18 +10,19 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
- 
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
- 
+
 public class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot {
- 
+
     private final String token;
     private final TelegramClient client;
+    private final SessionFactory sessionFactory;
     private final Map<Long, HabitCommandHandler> handlers = new ConcurrentHashMap<>();
- 
-    public TelegramBot() {
-        // Токен берём здесь, внутри Telegram-реализации: другим классам он не нужен
+
+    public TelegramBot(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
         this.token = System.getenv("BOT_TOKEN");
         if (token == null || token.isBlank()) {
             throw new IllegalStateException(
@@ -28,7 +30,7 @@ public class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot
         }
         this.client = new OkHttpTelegramClient(token);
     }
- 
+
     @Override
     public void run() {
         try {
@@ -43,7 +45,7 @@ public class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot
             }
         }
     }
- 
+
     @Override
     public void consume(Update update) {
         if (!update.hasMessage() || !update.getMessage().hasText()) {
@@ -51,13 +53,11 @@ public class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot
         }
         long chatId = update.getMessage().getChatId();
         String text = update.getMessage().getText();
- 
-        // Для нового чата создаём свой обработчик и свой список привычек (один раз),
-        // для известного чата берём уже созданный
+
         HabitCommandHandler handler = handlers.computeIfAbsent(
-                chatId, id -> new HabitCommandHandler(new InMemoryHabitRepository()));
+                chatId, id -> new HabitCommandHandler(new PostgresHabitRepository(sessionFactory, id)));
         String reply = handler.handle(text);
- 
+
         try {
             client.execute(SendMessage.builder().chatId(chatId).text(reply).build());
         } catch (TelegramApiException e) {

@@ -6,6 +6,7 @@ import java.util.List;
 public interface HabitRepository {
     List<Habit> getAllHabits();
     void addHabit(Habit habit);
+    void updateHabit(Habit habit);
     void removeHabit(int index);
     boolean isEmpty();
     int size();
