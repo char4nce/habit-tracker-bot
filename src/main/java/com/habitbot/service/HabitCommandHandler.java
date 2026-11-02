@@ -204,6 +204,8 @@ public class HabitCommandHandler {
         state = State.IDLE;
         Habit selected = repository.getHabit(index);
         selected.increaseCount();
+        repository.updateHabit(selected);
+
         String reply = "Отметка добавлена: " + selected.getTitle()
                 + " (" + selected.getCurrentCount() + "/" + selected.getTargetCount() + ")";
         if (selected.isCompleted()) {
@@ -223,6 +225,7 @@ public class HabitCommandHandler {
             return "Привычка '" + toSkip.getTitle() + "' уже выполнена, пропускать нечего.";
         }
         toSkip.skip();
+        repository.updateHabit(toSkip);
         return "Привычка '" + toSkip.getTitle() + "' отмечена как пропущенная ❌";
     }
 
@@ -263,8 +266,12 @@ public class HabitCommandHandler {
     }
 
     private String onAddCategory(String input) {
-        // В Telegram нельзя отправить пустое сообщение, поэтому "-" означает "без категории"
-        String category = input.equals("-") ? "" : input;
+        String category;
+        if (input.equals("-")) {
+            category = "";
+        } else {
+            category = input;
+        }
         repository.addHabit(new Habit(pendingTitle, pendingCount, category));
         state = State.IDLE;
         return "Привычка '" + pendingTitle + "' сохранена.";

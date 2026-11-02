@@ -2,7 +2,7 @@ package com.habitbot.bot;
 
 import com.habitbot.model.Habit;
 import com.habitbot.repository.HabitRepository;
-import com.habitbot.service.HabitReminder; 
+import com.habitbot.service.HabitReminder;
 
 import java.util.LinkedHashSet;
 import java.util.Scanner;
@@ -10,12 +10,12 @@ import java.util.Set;
 
 public class ConsoleBot implements Bot {
     private final HabitRepository habitRepository;
-    private final HabitReminder reminder; 
+    private final HabitReminder reminder;
 
     public ConsoleBot(HabitRepository habitRepository) {
         this.habitRepository = habitRepository;
-        
-        // Напоминалки теперь запускаются внутри бота
+
+        // Напоминалки запускаются внутри бота
         this.reminder = new HabitReminder(habitRepository);
         this.reminder.start();
     }
@@ -32,6 +32,7 @@ public class ConsoleBot implements Bot {
             String command = scanner.nextLine().trim();
 
             if (command.equalsIgnoreCase("/exit")) {
+                reminder.stop();
                 System.out.println("Бот завершил работу.");
                 break;
             }
@@ -90,6 +91,7 @@ public class ConsoleBot implements Bot {
                     if (doneIndex >= 1 && doneIndex <= habitRepository.size()) {
                         Habit selected = habitRepository.getHabit(doneIndex - 1);
                         selected.increaseCount();
+                        habitRepository.updateHabit(selected);
 
                         System.out.println("Отметка добавлена: " + selected.getTitle() +
                                 " (" + selected.getCurrentCount() + "/" + selected.getTargetCount() + ")");
@@ -125,6 +127,7 @@ public class ConsoleBot implements Bot {
                             System.out.println("Привычка '" + toSkip.getTitle() + "' уже выполнена, пропускать нечего.");
                         } else {
                             toSkip.skip();
+                            habitRepository.updateHabit(toSkip);
                             System.out.println("Привычка '" + toSkip.getTitle() + "' отмечена как пропущенная ❌");
                         }
                     } else {

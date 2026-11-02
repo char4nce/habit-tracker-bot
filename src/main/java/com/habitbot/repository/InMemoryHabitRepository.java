@@ -18,6 +18,11 @@ public class InMemoryHabitRepository implements HabitRepository {
     }
 
     @Override
+    public void updateHabit(Habit habit) {
+        // В оперативной памяти объект обновляется по ссылке автоматически
+    }
+
+    @Override
     public void removeHabit(int index) {
         habits.remove(index);
     }
