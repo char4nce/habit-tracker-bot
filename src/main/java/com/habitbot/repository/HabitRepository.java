@@ -4,11 +4,11 @@ import com.habitbot.model.Habit;
 import java.util.List;
 
 public interface HabitRepository {
-    List<Habit> getAllHabits();
-    void addHabit(Habit habit);
+    List<Habit> getAllHabits(Long chatId);
+    void addHabit(Long chatId, Habit habit);
     void updateHabit(Habit habit);
-    void removeHabit(int index);
-    boolean isEmpty();
-    int size();
-    Habit getHabit(int index);
+    void removeHabit(Long chatId, Long habitId);
+    boolean isEmpty(Long chatId);
+    int size(Long chatId);
+    Habit getHabit(Long chatId, Long habitId);
 }

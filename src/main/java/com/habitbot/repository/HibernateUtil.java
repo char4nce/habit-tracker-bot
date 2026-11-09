@@ -11,11 +11,7 @@ public class HibernateUtil {
             Configuration cfg = new Configuration();
             cfg.setProperty("hibernate.connection.driver_class", "org.postgresql.Driver");
             cfg.setProperty("hibernate.connection.url",
-                    System.getenv().getOrDefault("DB_URL", "jdbc:postgresql://localhost:5432/habitbot"));
-            cfg.setProperty("hibernate.connection.username",
-                    System.getenv().getOrDefault("DB_USER", "postgres"));
-            cfg.setProperty("hibernate.connection.password",
-                    System.getenv().getOrDefault("DB_PASSWORD", "postgres"));
+                    System.getenv().getOrDefault("DB_URL", "jdbc:postgresql://localhost:5432/habitbot?user=postgres&password=postgress"));
 
             cfg.setProperty("hibernate.hbm2ddl.auto", "update");
             cfg.setProperty("hibernate.show_sql", "false");

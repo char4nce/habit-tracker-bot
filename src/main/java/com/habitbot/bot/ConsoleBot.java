@@ -5,12 +5,14 @@ import com.habitbot.repository.HabitRepository;
 import com.habitbot.service.HabitReminder;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
 public class ConsoleBot implements Bot {
     private final HabitRepository habitRepository;
     private final HabitReminder reminder;
+    private final Long CHAT_ID = 0L; 
 
     public ConsoleBot(HabitRepository habitRepository) {
         this.habitRepository = habitRepository;
@@ -23,7 +25,6 @@ public class ConsoleBot implements Bot {
     @Override
     public void run() {
         Scanner scanner = new Scanner(System.in);
-
         System.out.println("Бот-трекер привычек запущен.");
         System.out.println("Доступные команды: /add, /list, /done, /skip, /today, /category, /stats, /delete, /exit");
 
@@ -39,12 +40,13 @@ public class ConsoleBot implements Bot {
 
             switch (command.toLowerCase()) {
                 case "/list":
-                    if (habitRepository.isEmpty()) {
+                    List<Habit> allHabits = habitRepository.getAllHabits(CHAT_ID);
+                    if (allHabits.isEmpty()) {
                         System.out.println("Список пуст. Добавьте привычку через /add");
                     } else {
                         System.out.println("--- Ваши привычки ---");
-                        for (int i = 0; i < habitRepository.size(); i++) {
-                            Habit h = habitRepository.getHabit(i);
+                        for (int i = 0; i < allHabits.size(); i++) {
+                            Habit h = allHabits.get(i);
                             System.out.println((i + 1) + ". " + h.getTitle() +
                                     " [" + h.getCurrentCount() + "/" + h.getTargetCount() + "]" +
                                     " (" + h.getCategory() + ")");
@@ -65,31 +67,33 @@ public class ConsoleBot implements Bot {
 
                     System.out.print("Во сколько напомнить? (в формате ЧЧ:ММ или Enter чтобы пропустить): ");
                     String time = scanner.nextLine().trim();
+                    
                     Habit newHabit = new Habit(title, count, category);
                     newHabit.setReminderTime(time);
 
-                    habitRepository.addHabit(newHabit);
+                    // ИЗМЕНЕНО: Передаем CHAT_ID
+                    habitRepository.addHabit(CHAT_ID, newHabit); 
                     System.out.println("Привычка '" + title + "' сохранена.");
                     break;
 
                 case "/done":
-                    if (habitRepository.isEmpty()) {
+                    List<Habit> doneHabits = habitRepository.getAllHabits(CHAT_ID);
+                    if (doneHabits.isEmpty()) {
                         System.out.println("Список пуст.");
                         break;
                     }
 
                     System.out.println("Какую привычку отметить?");
-                    for (int i = 0; i < habitRepository.size(); i++) {
-                        Habit h = habitRepository.getHabit(i);
-                        System.out.println((i + 1) + ". " + h.getTitle());
+                    for (int i = 0; i < doneHabits.size(); i++) {
+                        System.out.println((i + 1) + ". " + doneHabits.get(i).getTitle());
                     }
 
                     System.out.print("Введите номер > ");
                     int doneIndex = scanner.nextInt();
                     scanner.nextLine();
 
-                    if (doneIndex >= 1 && doneIndex <= habitRepository.size()) {
-                        Habit selected = habitRepository.getHabit(doneIndex - 1);
+                    if (doneIndex >= 1 && doneIndex <= doneHabits.size()) {
+                        Habit selected = doneHabits.get(doneIndex - 1);
                         selected.increaseCount();
                         habitRepository.updateHabit(selected);
 
@@ -105,14 +109,15 @@ public class ConsoleBot implements Bot {
                     break;
 
                 case "/skip":
-                    if (habitRepository.isEmpty()) {
+                    List<Habit> skipHabits = habitRepository.getAllHabits(CHAT_ID);
+                    if (skipHabits.isEmpty()) {
                         System.out.println("Список пуст.");
                         break;
                     }
 
                     System.out.println("Какую привычку пропустить сегодня?");
-                    for (int i = 0; i < habitRepository.size(); i++) {
-                        Habit h = habitRepository.getHabit(i);
+                    for (int i = 0; i < skipHabits.size(); i++) {
+                        Habit h = skipHabits.get(i);
                         System.out.println((i + 1) + ". " + h.getTitle() + " " + h.getStatus());
                     }
 
@@ -120,8 +125,8 @@ public class ConsoleBot implements Bot {
                     int skipIndex = scanner.nextInt();
                     scanner.nextLine();
 
-                    if (skipIndex >= 1 && skipIndex <= habitRepository.size()) {
-                        Habit toSkip = habitRepository.getHabit(skipIndex - 1);
+                    if (skipIndex >= 1 && skipIndex <= skipHabits.size()) {
+                        Habit toSkip = skipHabits.get(skipIndex - 1);
 
                         if (toSkip.isCompleted()) {
                             System.out.println("Привычка '" + toSkip.getTitle() + "' уже выполнена, пропускать нечего.");
@@ -136,33 +141,35 @@ public class ConsoleBot implements Bot {
                     break;
 
                 case "/today":
-                    if (habitRepository.isEmpty()) {
+                    List<Habit> todayHabits = habitRepository.getAllHabits(CHAT_ID);
+                    if (todayHabits.isEmpty()) {
                         System.out.println("Список пуст. Добавьте привычку через /add");
                         break;
                     }
 
                     System.out.println("--- План на сегодня ---");
                     int todayDone = 0;
-                    for (int i = 0; i < habitRepository.size(); i++) {
-                        Habit h = habitRepository.getHabit(i);
+                    for (int i = 0; i < todayHabits.size(); i++) {
+                        Habit h = todayHabits.get(i);
                         System.out.println((i + 1) + ". " + h.getTitle() +
                                 " [" + h.getCurrentCount() + "/" + h.getTargetCount() + "] " + h.getStatus());
                         if (h.isCompleted()) {
                             todayDone++;
                         }
                     }
-                    System.out.println("Выполнено: " + todayDone + " из " + habitRepository.size());
+                    System.out.println("Выполнено: " + todayDone + " из " + todayHabits.size());
                     break;
 
                 case "/category":
-                    if (habitRepository.isEmpty()) {
+                    List<Habit> catHabits = habitRepository.getAllHabits(CHAT_ID);
+                    if (catHabits.isEmpty()) {
                         System.out.println("Список пуст. Добавьте привычку через /add");
                         break;
                     }
 
                     Set<String> categories = new LinkedHashSet<>();
-                    for (int i = 0; i < habitRepository.size(); i++) {
-                        categories.add(habitRepository.getHabit(i).getCategory());
+                    for (Habit h : catHabits) {
+                        categories.add(h.getCategory());
                     }
                     System.out.println("Доступные категории: " + String.join(", ", categories));
 
@@ -171,8 +178,8 @@ public class ConsoleBot implements Bot {
 
                     System.out.println("--- Категория: " + filter + " ---");
                     boolean found = false;
-                    for (int i = 0; i < habitRepository.size(); i++) {
-                        Habit h = habitRepository.getHabit(i);
+                    for (int i = 0; i < catHabits.size(); i++) {
+                        Habit h = catHabits.get(i);
                         if (h.getCategory().equalsIgnoreCase(filter)) {
                             System.out.println((i + 1) + ". " + h.getTitle() +
                                     " [" + h.getCurrentCount() + "/" + h.getTargetCount() + "] " + h.getStatus());
@@ -185,15 +192,15 @@ public class ConsoleBot implements Bot {
                     break;
 
                 case "/stats":
-                    if (habitRepository.isEmpty()) {
+                    List<Habit> statHabits = habitRepository.getAllHabits(CHAT_ID);
+                    if (statHabits.isEmpty()) {
                         System.out.println("Список пуст. Нет данных для статистики.");
                         break;
                     }
 
-                    int totalHabits = habitRepository.size();
+                    int totalHabits = statHabits.size();
                     int completedHabits = 0;
-                    for (int i = 0; i < habitRepository.size(); i++) {
-                        Habit h = habitRepository.getHabit(i);
+                    for (Habit h : statHabits) {
                         if (h.isCompleted()) {
                             completedHabits++;
                         }
@@ -208,25 +215,26 @@ public class ConsoleBot implements Bot {
                     break;
 
                 case "/delete":
-                    if (habitRepository.isEmpty()) {
+                    List<Habit> delHabits = habitRepository.getAllHabits(CHAT_ID);
+                    if (delHabits.isEmpty()) {
                         System.out.println("Список пуст. Нечего удалять.");
                         break;
                     }
 
                     System.out.println("Какую привычку удалить?");
-                    for (int i = 0; i < habitRepository.size(); i++) {
-                        Habit h = habitRepository.getHabit(i);
-                        System.out.println((i + 1) + ". " + h.getTitle());
+                    for (int i = 0; i < delHabits.size(); i++) {
+                        System.out.println((i + 1) + ". " + delHabits.get(i).getTitle());
                     }
 
                     System.out.print("Введите номер > ");
                     int deleteIndex = scanner.nextInt();
                     scanner.nextLine();
 
-                    if (deleteIndex >= 1 && deleteIndex <= habitRepository.size()) {
-                        Habit removed = habitRepository.getHabit(deleteIndex - 1);
-                        habitRepository.removeHabit(deleteIndex - 1);
-                        System.out.println("Привычка '" + removed.getTitle() + "' удалена.");
+                    if (deleteIndex >= 1 && deleteIndex <= delHabits.size()) {
+                        // ИЗМЕНЕНО: используем реальный ID из базы данных для удаления
+                        Habit toRemove = delHabits.get(deleteIndex - 1);
+                        habitRepository.removeHabit(CHAT_ID, toRemove.getId());
+                        System.out.println("Привычка '" + toRemove.getTitle() + "' удалена.");
                     } else {
                         System.out.println("Ошибка: неверный номер.");
                     }

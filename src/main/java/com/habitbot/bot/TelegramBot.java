@@ -11,24 +11,21 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.meta.generics.TelegramClient;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 public class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot {
 
     private final String token;
     private final TelegramClient client;
-    private final SessionFactory sessionFactory;
-    private final Map<Long, HabitCommandHandler> handlers = new ConcurrentHashMap<>();
+    private final HabitCommandHandler handler;
 
     public TelegramBot(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
         this.token = System.getenv("BOT_TOKEN");
         if (token == null || token.isBlank()) {
             throw new IllegalStateException(
                     "Не задан токен Telegram-бота: установите переменную BOT_TOKEN");
         }
         this.client = new OkHttpTelegramClient(token);
+        PostgresHabitRepository repository = new PostgresHabitRepository(sessionFactory);
+        this.handler = new HabitCommandHandler(repository);
     }
 
     @Override
@@ -54,9 +51,7 @@ public class TelegramBot extends DefaultLongPollingUpdateConsumer implements Bot
         long chatId = update.getMessage().getChatId();
         String text = update.getMessage().getText();
 
-        HabitCommandHandler handler = handlers.computeIfAbsent(
-                chatId, id -> new HabitCommandHandler(new PostgresHabitRepository(sessionFactory, id)));
-        String reply = handler.handle(text);
+        String reply = handler.handle(chatId,text);
 
         try {
             client.execute(SendMessage.builder().chatId(chatId).text(reply).build());

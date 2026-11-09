@@ -17,7 +17,7 @@ public class BotFactory {
         SessionFactory sessionFactory = new HibernateUtil().buildSessionFactory();
 
         if (type == null || type.isBlank() || type.equalsIgnoreCase("console")) {
-            return new ConsoleBot(new PostgresHabitRepository(sessionFactory, 0L));
+            return new ConsoleBot(new PostgresHabitRepository(sessionFactory));
         }
         if (type.equalsIgnoreCase("telegram")) {
             return new TelegramBot(sessionFactory);
