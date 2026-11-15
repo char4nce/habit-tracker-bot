@@ -24,7 +24,7 @@ public class HabitReminder {
                 LocalTime now = LocalTime.now();
                 String currentTime = String.format("%02d:%02d", now.getHour(), now.getMinute());
 
-                for (Habit h : repository.getAllHabits()) {
+                for (Habit h : repository.getAllHabits(0L)) {
                     if (!h.isCompleted() && h.getReminderTime() != null && h.getReminderTime().equals(currentTime)) {
                         System.out.println("\nПора выполнять привычку: " + h.getTitle());
                         System.out.print("\nВведите команду > ");
